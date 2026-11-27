@@ -1,0 +1,313 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default catch-all: Block unknown collections by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // PACKAGES COLLECTION
+    match /packages/{packageId} {
+      allow read: if true;
+      allow create, update: if isValidId(packageId) &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.title.size() <= 300;
+      allow delete: if isValidId(packageId);
+    }
+
+    // ANNOUNCEMENTS COLLECTION
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow create, update: if isValidId(announcementId) &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.title.size() <= 500;
+      allow delete: if isValidId(announcementId);
+    }
+
+    // SETTINGS & CLOUD MEDIA STORE COLLECTION (Includes /settings/campaign and /settings/mediaStore/...)
+    match /settings/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ADMIN USERS COLLECTION
+    match /adminUsers/{userId} {
+      allow read: if true;
+      allow create, update: if isValidId(userId) &&
+        request.resource.data.username is string &&
+        request.resource.data.role is string;
+      allow delete: if isValidId(userId);
+    }
+
+    // FEEDBACK COLLECTION
+    match /feedback/{feedbackId} {
+      allow read: if true;
+      allow create, update: if isValidId(feedbackId) &&
+        request.resource.data.rating is number &&
+        request.resource.data.rating >= 1 &&
+        request.resource.data.rating <= 5;
+      allow delete: if isValidId(feedbackId);
+    }
+
+    // ACTIVITY LOGS COLLECTION (Immutable audit trail: cannot be deleted or modified once recorded)
+    match /activityLogs/{logId} {
+      allow read: if true;
+      allow create: if isValidId(logId) &&
+        request.resource.data.action is string &&
+        request.resource.data.action.size() <= 1000;
+      allow update, delete: if false;
+    }
+
+    // PILGRIMS COLLECTION
+    match /pilgrims/{pilgrimId} {
+      allow read: if true;
+      allow create, update: if isValidId(pilgrimId) &&
+        request.resource.data.nationalId is string &&
+        request.resource.data.firstName is string;
+      allow delete: if isValidId(pilgrimId);
+    }
+
+    // NOTIFICATIONS COLLECTION (Admin managed broadcasts and scheduled dispatches)
+    match /notifications/{notificationId} {
+      allow read: if true;
+      allow create, update: if isValidId(notificationId) &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.title.size() <= 300 &&
+        request.resource.data.body is string &&
+        request.resource.data.body.size() <= 4000;
+      allow delete: if isValidId(notificationId);
+    }
+
+    // PILGRIM NOTIFICATIONS INBOX COLLECTION (Recipient inboxes with read status)
+    match /pilgrim_notifications/{inboxId} {
+      allow read: if true;
+      allow create, update: if isValidId(inboxId) &&
+        request.resource.data.pilgrimId is string &&
+        request.resource.data.notificationId is string;
+      allow delete: if isValidId(inboxId);
+    }
+
+    // GIFT DISTRIBUTIONS COLLECTION (إدارة وتوزيع هدايا الحجاج)
+    match /gift_distributions/{distributionId} {
+      allow read: if true;
+      allow create, update: if isValidId(distributionId);
+      allow delete: if isValidId(distributionId);
+    }
+
+    // GIFT COMMUNICATIONS COLLECTION (سجل محاولات التواصل لمتابعة الهدايا)
+    match /gift_communications/{commId} {
+      allow read: if true;
+      allow create, update: if isValidId(commId);
+      allow delete: if isValidId(commId);
+    }
+
+    // RELIGIOUS GUIDANCE SYSTEM COLLECTIONS (منظومة الإرشاد الديني المتكاملة)
+    match /religious_guides/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(docId);
+    }
+    match /religious_programs/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(docId);
+    }
+    match /religious_lessons/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(docId);
+    }
+    match /religious_attendance/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(docId);
+    }
+    match /religious_questions/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(docId);
+    }
+    match /religious_assessments/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(docId);
+    }
+    match /religious_pilgrim_progress/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(docId);
+    }
+    match /religious_references/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(docId);
+    }
+    match /religious_inquiries/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(docId);
+    }
+    match /religious_fiqh_sections/{docId} {
+      allow read: if true;
+      allow create, update: if isValidId(docId) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.name.size() <= 200;
+      allow delete: if isValidId(docId);
+    }
+
+    // MEDIA ASSETS METADATA REGISTRY (Zero-Base64 in Firestore: stores only URLs & hashes)
+    match /mediaAssets/{assetId} {
+      allow read: if true;
+      allow create, update: if isValidId(assetId) &&
+        request.resource.data.fileHash is string &&
+        request.resource.data.fileHash.size() > 0 &&
+        request.resource.data.fileHash.size() <= 128 &&
+        request.resource.data.url is string &&
+        request.resource.data.url.size() > 0 &&
+        request.resource.data.url.size() <= 2048 &&
+        !request.resource.data.url.matches('^data:.*') &&
+        request.resource.data.mimeType is string &&
+        request.resource.data.mimeType.size() <= 100;
+      allow delete: if isValidId(assetId);
+    }
+
+    // SEASONS COLLECTION (إدارة مواسم الحج والعمرة والأرشيف السنوي)
+    match /seasons/{seasonId} {
+      allow read: if true;
+      allow create, update: if isValidId(seasonId) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.name.size() <= 200 &&
+        request.resource.data.hijriYear is string &&
+        request.resource.data.hijriYear.size() > 0 &&
+        request.resource.data.hijriYear.size() <= 10 &&
+        request.resource.data.status in ['active', 'completed', 'archived'];
+      allow delete: if isValidId(seasonId);
+    }
+
+    // CULTURAL PROGRAMS COLLECTION
+    match /cultural_programs/{docId} {
+      allow read: if true;
+      allow create, update: if isValidId(docId) &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.title.size() <= 300;
+      allow delete: if isValidId(docId);
+    }
+
+    // ADVISOR KNOWLEDGE BASE COLLECTION (مرشد القائم الذكي — بنك المعلومات وقاعدة المعرفة)
+    match /advisor_knowledge/{itemId} {
+      allow read: if true;
+      allow create, update: if isValidId(itemId) &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.title.size() <= 300 &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() > 0 &&
+        request.resource.data.content.size() <= 15000;
+      allow delete: if isValidId(itemId);
+    }
+
+    // ADVISOR INQUIRIES LOGS COLLECTION (سجل أسئلة مرشد القائم الذكي)
+    match /advisor_inquiries/{inquiryId} {
+      allow read: if true;
+      allow create, update: if isValidId(inquiryId) &&
+        request.resource.data.question is string &&
+        request.resource.data.question.size() > 0 &&
+        request.resource.data.question.size() <= 1200 &&
+        request.resource.data.answer is string &&
+        request.resource.data.answer.size() <= 5000;
+      allow delete: if isValidId(inquiryId);
+    }
+
+    // MANASIK GUIDE STAGES & RITUALS COLLECTION (دليل المناسك التفاعلي الديناميكي)
+    function isValidManasikStage(data) {
+      return data.title is string &&
+        data.title.size() > 0 &&
+        data.title.size() <= 250 &&
+        data.order is number &&
+        data.isEnabled is bool &&
+        data.rituals is list &&
+        data.rituals.size() <= 100;
+    }
+
+    match /manasik_stages/{stageId} {
+      allow read: if true;
+      allow create, update: if isValidId(stageId) && isValidManasikStage(request.resource.data);
+      allow delete: if isValidId(stageId);
+    }
+
+    // PILGRIM MANASIK PROGRESS COLLECTION (متابعة مناسك وأعمال الحاج السحابية)
+    match /pilgrim_manasik_progress/{pilgrimKey} {
+      allow read: if true;
+      allow create, update: if isValidId(pilgrimKey) &&
+        request.resource.data.nationalId is string &&
+        request.resource.data.nationalId.size() > 0 &&
+        request.resource.data.nationalId.size() <= 30 &&
+        request.resource.data.completedRitualIds is list &&
+        request.resource.data.completedRitualIds.size() <= 500;
+      allow delete: if isValidId(pilgrimKey);
+    }
+
+    // ADMIN PRESENCES COLLECTION (شارات الحضور الحي للمشرفين)
+    match /adminPresences/{docId} {
+      allow read, write: if true;
+    }
+
+    // ONLINE VISITORS COLLECTION (المتصلون الآن)
+    match /onlineVisitors/{docId} {
+      allow read, write: if true;
+    }
+
+    // SITE STATS COLLECTION (إحصائيات إجمالي الزوار)
+    match /siteStats/{docId} {
+      allow read, write: if true;
+    }
+
+    // DYNAMIC REGISTRATION FORMS COLLECTION (منشئ الاستمارات الديناميكي للباقات)
+    match /registration_forms/{formId} {
+      allow read: if true;
+      allow create, update: if isValidId(formId) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.name.size() <= 250 &&
+        request.resource.data.sections is list &&
+        request.resource.data.sections.size() <= 30 &&
+        request.resource.data.status in ['active', 'draft', 'archived'];
+      allow delete: if isValidId(formId);
+    }
+
+    // AUTH LOCKOUTS COLLECTION (حماية ضد هجمات التخمين: قفل مؤقت 15 دقيقة بعد 5 محاولات فاشلة)
+    match /auth_lockouts/{lockoutId} {
+      allow read: if true;
+      allow create, update: if isValidId(lockoutId) &&
+        request.resource.data.identifier is string &&
+        request.resource.data.identifier.size() > 0 &&
+        request.resource.data.identifier.size() <= 200 &&
+        request.resource.data.failedAttempts is number &&
+        request.resource.data.failedAttempts >= 0 &&
+        request.resource.data.failedAttempts <= 100 &&
+        request.resource.data.lockedUntil is number;
+      allow delete: if isValidId(lockoutId);
+    }
+
+    // TRUSTED DEVICES COLLECTION (الأجهزة الموثوقة ومفاتيح البصمة الحيوية WebAuthn)
+    match /trusted_devices/{deviceId} {
+      allow read: if true;
+      allow create, update: if isValidId(deviceId) &&
+        request.resource.data.userId is string &&
+        request.resource.data.userId.size() > 0 &&
+        request.resource.data.userId.size() <= 128 &&
+        request.resource.data.deviceName is string &&
+        request.resource.data.deviceName.size() > 0 &&
+        request.resource.data.deviceName.size() <= 200 &&
+        request.resource.data.deviceTokenHash is string &&
+        request.resource.data.deviceTokenHash.size() == 64 &&
+        request.resource.data.deviceFingerprint is string &&
+        request.resource.data.deviceFingerprint.size() == 64 &&
+        request.resource.data.biometricEnabled is bool;
+      allow delete: if isValidId(deviceId);
+    }
+  }
+}
+
