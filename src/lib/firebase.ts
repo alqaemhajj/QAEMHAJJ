@@ -1,16 +1,8 @@
 import { initializeApp, getApps } from 'firebase/app';
-import {
-  Auth,
-  browserLocalPersistence,
-  browserPopupRedirectResolver,
-  getAuth,
-  inMemoryPersistence,
-  initializeAuth,
-} from 'firebase/auth';
+import { Auth, getAuth } from 'firebase/auth';
 import { getFirestore, initializeFirestore, setLogLevel, Firestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
-import { safeStorage } from '../utils/safeStorage';
 
 const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -29,18 +21,10 @@ try {
   firestoreDb = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 }
 
-let firebaseAuth: Auth;
-try {
-  const canPersist = safeStorage.isPersistent();
-  firebaseAuth = initializeAuth(app, {
-    persistence: canPersist
-      ? [browserLocalPersistence, inMemoryPersistence]
-      : [inMemoryPersistence],
-    popupRedirectResolver: browserPopupRedirectResolver,
-  });
-} catch {
-  firebaseAuth = getAuth(app);
-}
+// Use canonical getAuth(app): works cleanly in both Node.js (server.ts) and browser/iframe runtimes
+// without passing browser-only popupRedirectResolver to Node builds; Firebase Auth automatically
+// falls back to inMemoryPersistence if IndexedDB/localStorage are restricted in sandboxed iframes.
+const firebaseAuth: Auth = getAuth(app);
 
 export const db = firestoreDb;
 export const auth = firebaseAuth;

@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'favicon.png', 'apple-touch-icon.png', 'logo.png', 'og-logo.png'],
+        includeAssets: ['favicon.ico', 'favicon.png', 'apple-touch-icon.png', 'logo.png', 'og-logo.png', 'share-banner.png'],
         manifest: {
           id: '/',
           name: 'قافلة القائم للحج والعمرة والزيارة',

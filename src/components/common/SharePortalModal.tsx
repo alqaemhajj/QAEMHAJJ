@@ -35,9 +35,14 @@ export function resolveOfficialPortalUrl(campaignSettings: CampaignSettings): st
     }
   }
   if (typeof window !== 'undefined' && window.location?.origin) {
-    return window.location.origin.replace(/\/+$/, '');
+    const origin = window.location.origin.replace(/\/+$/, '');
+    const isPreviewOrLocal =
+      /localhost|127\.0\.0\.1|ais-dev-|ais-pre-/i.test(origin);
+    if (!isPreviewOrLocal) {
+      return origin;
+    }
   }
-  return 'https://alqaemhajj.com';
+  return 'https://qaemhajj.pages.dev';
 }
 
 function drawRoundedRect(
@@ -128,9 +133,9 @@ export const SharePortalModal: React.FC<SharePortalModalProps> = ({
   }, [campaignSettings.siteTexts?.brandName, campaignSettings.siteTexts?.brandSubtitle]);
 
   const whatsappShareHref = useMemo(() => {
-    const message = `${fullBrandTitle}\nامسح الرمز أو ادخل مباشرة عبر الرابط الرسمي لبوابة القافلة والتسجيل:\n${shareUrl}`;
+    const message = `*قافلة القائم للحج والعمرة*\n\n*بوابة القافلة*\nالرسمية والتسجيل الموسمي\n\n${shareUrl}`;
     return `https://wa.me/?text=${encodeURIComponent(message)}`;
-  }, [fullBrandTitle, shareUrl]);
+  }, [shareUrl]);
 
   // Generate high-accuracy QR Code (Level H, strict #000000 on #FFFFFF, Quiet Zone margin: 4)
   useEffect(() => {
@@ -203,9 +208,10 @@ export const SharePortalModal: React.FC<SharePortalModalProps> = ({
 
   const handleNativeShare = async () => {
     setNativeShareNotice('');
+    const formattedText = `*قافلة القائم للحج والعمرة*\n\n*بوابة القافلة*\nالرسمية والتسجيل الموسمي`;
     const shareData = {
-      title: fullBrandTitle,
-      text: `${fullBrandTitle} — بوابة القافلة الرسمية والتسجيل`,
+      title: 'قافلة القائم للحج والعمرة',
+      text: formattedText,
       url: shareUrl,
     };
 
@@ -224,10 +230,10 @@ export const SharePortalModal: React.FC<SharePortalModalProps> = ({
     }
 
     // Graceful fallback when navigator.share is unavailable (e.g. desktop browsers / embedded frames)
-    const ok = await copyTextReliable(shareUrl);
+    const ok = await copyTextReliable(`${formattedText}\n\n${shareUrl}`);
     if (ok) {
       setCopied(true);
-      setNativeShareNotice('تم نسخ رابط الموقع للمشاركة السريعة في أي تطبيق');
+      setNativeShareNotice('تم نسخ رسالة ورابط المشاركة السريعة');
       window.setTimeout(() => {
         setCopied(false);
         setNativeShareNotice('');

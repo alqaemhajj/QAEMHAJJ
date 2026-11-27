@@ -215,7 +215,7 @@ export async function enrollDeviceBiometric(params: {
     if (errName === 'NotAllowedError') {
       if (support.inCrossOriginIframe || errMsg.toLowerCase().includes('publickey-credentials')) {
         throw new Error(
-          'نافذة المعاينة المضمنة (iframe) تقيّد الوصول المباشر لمستشعر البصمة. افتح البوابة في تبويب مستقل أو على رابط النشر الرسمي (alqaemhajj.pages.dev) لتسجيل البصمة.'
+          'نافذة المعاينة المضمنة (iframe) تقيّد الوصول المباشر لمستشعر البصمة. افتح البوابة في تبويب مستقل أو على رابط النشر الرسمي (qaemhajj.pages.dev) لتسجيل البصمة.'
         );
       }
       throw new Error('تم إلغاء عملية تسجيل البصمة أو انتهت المهلة. يرجى المحاولة مرة أخرى.');
